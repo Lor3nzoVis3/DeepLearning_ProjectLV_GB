@@ -1,0 +1,92 @@
+
+import os
+from os import path, listdir
+import shutil
+import cv2
+from itertools import islice
+
+
+original_folder = './img_align_celeba'
+start_folder = './img_align_celeba_5000samples'
+end_folder = './source_light/train'
+
+#first time
+if len(os.listdir(start_folder)) == 0:
+    #files
+    files_or = [os.path.join(original_folder, file) for file in os.listdir(original_folder) if os.path.isfile(os.path.join(original_folder, file))]
+    for file in files_or[15000:20000]:
+        shutil.copy(file, start_folder)
+
+files_end = [os.path.join(start_folder, file) for file in os.listdir(start_folder) if os.path.isfile(os.path.join(start_folder, file))]
+#sort
+files_end.sort()
+
+#paths
+#left
+path_l = end_folder + '/left_light/'
+#center
+path_c = end_folder + '/center_light/'
+#right
+path_r = end_folder + '/right_light/'
+#idk
+path_idk = end_folder + '/idk/'
+
+
+for file in files_end:
+    redo = True
+    stop = False
+    while redo:
+        redo = False
+        print(file)
+        if file.endswith(('.jpeg', '.jpg')):
+            imgCeleba = cv2.imread(file)
+            cv2.imshow('Celeba Image', imgCeleba)
+
+            hsv_image = cv2.cvtColor(imgCeleba, cv2.COLOR_BGR2HSV)
+            cv2.imshow('Celeba Image_hsv', hsv_image)
+
+
+            # # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+            # clahe = cv2.createCLAHE(clipLimit=3., tileGridSize=(8,8))
+            # lab = cv2.cvtColor(imgCeleba, cv2.COLOR_BGR2LAB)  # convert from BGR to LAB color space
+            # l, a, b = cv2.split(lab)  # split on 3 different channels
+            # l2 = clahe.apply(l)  # apply CLAHE to the L-channel
+            # lab = cv2.merge((l2,a,b))  # merge channels
+            # img2 = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)  # convert from LAB to BGR
+            # cv2.imshow('Increased contrast', img2)
+
+            #gray
+            gray = cv2.cvtColor(imgCeleba, cv2.COLOR_BGR2GRAY)
+            # blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+            # threshold the image to reveal light regions in the
+            # blurred image
+            thresh = cv2.threshold(gray, 170, 255, cv2.THRESH_BINARY)[1]
+            cv2.imshow('Increased contrast', thresh)
+
+
+
+            #initialise the waitkey
+            keypressed = cv2.waitKey(0)
+            if keypressed == ord('a') or keypressed == 2:
+                shutil.move(file, path_l)
+                print(f"{file} moved on left source folder")
+            elif keypressed == ord('s') or keypressed == 1:
+                shutil.move(file, path_c)
+                print(f"{file} moved on center source folder")
+            elif keypressed == ord('d') or keypressed == 3:
+                shutil.move(file, path_r)
+                print(f"{file} moved on right source folder")
+            elif keypressed == ord('w'):
+                shutil.move(file, path_idk)
+                print(f"{file}: idk")
+            elif keypressed == ord('x'):
+                stop = True
+            else:
+                redo = True
+                print("Invalid key pressed")
+                print("Select left arrow or a for left source, down arrow or s for center source, right arrow or d for right source. Press x for end")
+    if stop: break
+
+
+cv2.destroyAllWindows()
+print("Image selection stopped")
